@@ -4,3 +4,6 @@ dist
 *.zip
 .DS_Store
 
+
+# local env
+.env
