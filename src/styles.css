@@ -778,6 +778,12 @@ body {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
   border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.audio-section.collapsed {
+  padding: 1rem 2rem;
+  margin: 1rem 0;
 }
 
 .audio-header {
