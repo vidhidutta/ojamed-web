@@ -30,6 +30,18 @@ export default function App() {
     useGoogleVision: false,
     enableSemanticMasking: false
   });
+  
+  // Audio integration state
+  const [audioFile, setAudioFile] = useState(null);
+  const [audioOptions, setAudioOptions] = useState({
+    enableAudio: false,
+    useEmphasis: true,
+    enableDiarization: false,
+    makeAudioClips: false,
+    clipLength: 9,
+    maxClips: 2,
+    alignmentMode: "semantic+keyword"
+  });
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -224,6 +236,52 @@ export default function App() {
               </div>
             </div>
 
+            {/* Audio Integration Section */}
+            <div className="audio-section">
+              <h3>🎵 Audio Integration (Optional)</h3>
+              <p className="section-description">
+                Upload lecture audio to enhance flashcards with emphasis detection and audio clips
+              </p>
+              
+              <div className="audio-upload">
+                <label className="audio-upload-label">
+                  <input
+                    type="file"
+                    accept=".mp3,.wav,.m4a,.flac"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      setAudioFile(file);
+                      setAudioOptions(prev => ({ ...prev, enableAudio: !!file }));
+                    }}
+                    className="audio-file-input"
+                  />
+                  <div className="audio-upload-content">
+                    <span className="audio-icon">🎤</span>
+                    <div className="audio-text">
+                      <strong>Upload Lecture Audio</strong>
+                      <small>MP3, WAV, M4A, or FLAC • Max 100MB</small>
+                    </div>
+                  </div>
+                </label>
+                
+                {audioFile && (
+                  <div className="audio-file-info">
+                    <span className="audio-file-name">📁 {audioFile.name}</span>
+                    <button
+                      type="button"
+                      className="remove-audio-btn"
+                      onClick={() => {
+                        setAudioFile(null);
+                        setAudioOptions(prev => ({ ...prev, enableAudio: false }));
+                      }}
+                    >
+                      ✕ Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Advanced Configuration Toggle */}
             <div className="advanced-toggle">
               <button
@@ -382,6 +440,100 @@ export default function App() {
                   {!cardTypes.cloze && !cardTypes.imageOcclusion && (
                     <div className="no-settings-message">
                       <p>Select card types above to see their quality settings</p>
+                    </div>
+                  )}
+                  
+                  {/* Audio Quality Settings - Only show when audio is uploaded */}
+                  {audioOptions.enableAudio && (
+                    <div className="quality-section">
+                      <h4>🎵 Audio Quality Settings</h4>
+                      <div className="quality-options">
+                        <label className="option-item">
+                          <input
+                            type="checkbox"
+                            checked={audioOptions.useEmphasis}
+                            onChange={(e) => setAudioOptions(prev => ({ ...prev, useEmphasis: e.target.checked }))}
+                          />
+                          <span className="option-icon">🎯</span>
+                          <div className="option-content">
+                            <strong>Emphasis Detection</strong>
+                            <small>Detect stressed content from pitch, volume, and speaking rate</small>
+                          </div>
+                        </label>
+                        
+                        <label className="option-item">
+                          <input
+                            type="checkbox"
+                            checked={audioOptions.enableDiarization}
+                            onChange={(e) => setAudioOptions(prev => ({ ...prev, enableDiarization: e.target.checked }))}
+                          />
+                          <span className="option-icon">👥</span>
+                          <div className="option-content">
+                            <strong>Speaker Diarization</strong>
+                            <small>Identify different speakers in the lecture</small>
+                          </div>
+                        </label>
+                        
+                        <label className="option-item">
+                          <input
+                            type="checkbox"
+                            checked={audioOptions.makeAudioClips}
+                            onChange={(e) => setAudioOptions(prev => ({ ...prev, makeAudioClips: e.target.checked }))}
+                          />
+                          <span className="option-icon">🎬</span>
+                          <div className="option-content">
+                            <strong>Generate Audio Clips</strong>
+                            <small>Create audio snippets for flashcards</small>
+                          </div>
+                        </label>
+                        
+                        {audioOptions.makeAudioClips && (
+                          <div className="nested-options">
+                            <div className="option-row">
+                              <label>
+                                Clip Length (seconds):
+                                <input
+                                  type="range"
+                                  min="5"
+                                  max="15"
+                                  value={audioOptions.clipLength}
+                                  onChange={(e) => setAudioOptions(prev => ({ ...prev, clipLength: parseInt(e.target.value) }))}
+                                />
+                                <span>{audioOptions.clipLength}s</span>
+                              </label>
+                            </div>
+                            
+                            <div className="option-row">
+                              <label>
+                                Max Clips per Slide:
+                                <input
+                                  type="range"
+                                  min="1"
+                                  max="5"
+                                  value={audioOptions.maxClips}
+                                  onChange={(e) => setAudioOptions(prev => ({ ...prev, maxClips: parseInt(e.target.value) }))}
+                                />
+                                <span>{audioOptions.maxClips}</span>
+                              </label>
+                            </div>
+                            
+                            <div className="option-row">
+                              <label>
+                                Alignment Mode:
+                                <select
+                                  value={audioOptions.alignmentMode}
+                                  onChange={(e) => setAudioOptions(prev => ({ ...prev, alignmentMode: e.target.value }))}
+                                  className="alignment-select"
+                                >
+                                  <option value="semantic+keyword">Semantic + Keyword (Best)</option>
+                                  <option value="semantic">Semantic Only</option>
+                                  <option value="keyword">Keyword Only</option>
+                                </select>
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
