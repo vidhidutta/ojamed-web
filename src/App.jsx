@@ -10,6 +10,26 @@ export default function App() {
   const [msg, setMsg] = useState("");
   const [hint, setHint] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  
+  // Advanced configuration state
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [cardTypes, setCardTypes] = useState({
+    basic: true,
+    cloze: false,
+    imageOcclusion: false
+  });
+  const [cardLevels, setCardLevels] = useState({
+    level1: true,
+    level2: false
+  });
+  const [advancedOptions, setAdvancedOptions] = useState({
+    useCloze: false,
+    enableImageOcclusion: false,
+    maxMasksPerImage: 6,
+    confThreshold: 30,
+    useGoogleVision: false,
+    enableSemanticMasking: false
+  });
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -54,6 +74,27 @@ export default function App() {
     return interval;
   };
 
+  const handleCardTypeChange = (type) => {
+    setCardTypes(prev => ({
+      ...prev,
+      [type]: !prev[type]
+    }));
+  };
+
+  const handleLevelChange = (level) => {
+    setCardLevels(prev => ({
+      ...prev,
+      [level]: !prev[level]
+    }));
+  };
+
+  const handleAdvancedOptionChange = (option, value) => {
+    setAdvancedOptions(prev => ({
+      ...prev,
+      [option]: value
+    }));
+  };
+
   async function onSubmit(e) {
     e.preventDefault();
     setMsg("");
@@ -65,6 +106,18 @@ export default function App() {
     if (!f) { 
       setMsg("⚠️ Please select a .ppt, .pptx, or .pdf file first.");
       return; 
+    }
+
+    // Validate that at least one card type is selected
+    if (!Object.values(cardTypes).some(v => v)) {
+      setMsg("⚠️ Please select at least one card type.");
+      return;
+    }
+
+    // Validate that at least one level is selected
+    if (!Object.values(cardLevels).some(v => v)) {
+      setMsg("⚠️ Please select at least one card level.");
+      return;
     }
 
     setBusy(true);
@@ -171,6 +224,170 @@ export default function App() {
               </div>
             </div>
 
+            {/* Advanced Configuration Toggle */}
+            <div className="advanced-toggle">
+              <button
+                type="button"
+                className="toggle-btn"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                {showAdvanced ? "🔽 Hide Advanced Options" : "🔽 Show Advanced Options"}
+              </button>
+            </div>
+
+            {/* Advanced Configuration Panel */}
+            {showAdvanced && (
+              <div className="advanced-panel">
+                <div className="config-section">
+                  <h3>🎯 Card Types</h3>
+                  <p className="section-description">Select which types of flashcards you want to generate</p>
+                  <div className="option-grid">
+                    <label className="option-item">
+                      <input
+                        type="checkbox"
+                        checked={cardTypes.basic}
+                        onChange={() => handleCardTypeChange('basic')}
+                      />
+                      <span className="option-icon">📝</span>
+                      <div className="option-content">
+                        <strong>Basic Cards</strong>
+                        <small>Traditional Q&A format</small>
+                      </div>
+                    </label>
+                    
+                    <label className="option-item">
+                      <input
+                        type="checkbox"
+                        checked={cardTypes.cloze}
+                        onChange={() => handleCardTypeChange('cloze')}
+                      />
+                      <span className="option-icon">🔍</span>
+                      <div className="option-content">
+                        <strong>Cloze Cards</strong>
+                        <small>Fill-in-the-blank format</small>
+                      </div>
+                    </label>
+                    
+                    <label className="option-item">
+                      <input
+                        type="checkbox"
+                        checked={cardTypes.imageOcclusion}
+                        onChange={() => handleCardTypeChange('imageOcclusion')}
+                      />
+                      <span className="option-icon">🖼️</span>
+                      <div className="option-content">
+                        <strong>Image Occlusion</strong>
+                        <small>Masked anatomical diagrams</small>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="config-section">
+                  <h3>📚 Card Levels</h3>
+                  <p className="section-description">Choose the complexity level of your flashcards</p>
+                  <div className="option-grid">
+                    <label className="option-item">
+                      <input
+                        type="checkbox"
+                        checked={cardLevels.level1}
+                        onChange={() => handleLevelChange('level1')}
+                      />
+                      <span className="option-icon">🥉</span>
+                      <div className="option-content">
+                        <strong>Level 1 (Basic)</strong>
+                        <small>Definitions, facts, basic concepts</small>
+                      </div>
+                    </label>
+                    
+                    <label className="option-item">
+                      <input
+                        type="checkbox"
+                        checked={cardLevels.level2}
+                        onChange={() => handleLevelChange('level2')}
+                      />
+                      <span className="option-icon">🥈</span>
+                      <div className="option-content">
+                        <strong>Level 2 (Advanced)</strong>
+                        <small>Clinical reasoning, interpretation</small>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="config-section">
+                  <h3>⚙️ Quality Settings</h3>
+                  <p className="section-description">Automatically configured based on your card type selection</p>
+                  
+                  {/* Cloze Quality Settings - Only show when Cloze is selected */}
+                  {cardTypes.cloze && (
+                    <div className="quality-section">
+                      <h4>🔍 Cloze Quality Settings</h4>
+                      <div className="quality-options">
+                        <label className="option-item">
+                          <input
+                            type="checkbox"
+                            checked={true}
+                            disabled={true}
+                          />
+                          <span className="option-icon">✨</span>
+                          <div className="option-content">
+                            <strong>Auto-detect Cloze</strong>
+                            <small>Automatically identify cloze opportunities</small>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Image Occlusion Quality Settings - Only show when Image Occlusion is selected */}
+                  {cardTypes.imageOcclusion && (
+                    <div className="quality-section">
+                      <h4>🖼️ Image Occlusion Quality Settings</h4>
+                      <div className="quality-options">
+                        <div className="nested-options">
+                          <div className="option-row">
+                            <label>
+                              Max Masks per Image:
+                              <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={advancedOptions.maxMasksPerImage}
+                                onChange={(e) => handleAdvancedOptionChange('maxMasksPerImage', parseInt(e.target.value))}
+                              />
+                              <span>{advancedOptions.maxMasksPerImage}</span>
+                            </label>
+                          </div>
+                          
+                          <div className="option-row">
+                            <label>
+                              Confidence Threshold:
+                              <input
+                                type="range"
+                                min="10"
+                                max="90"
+                                value={advancedOptions.confThreshold}
+                                onChange={(e) => handleAdvancedOptionChange('confThreshold', parseInt(e.target.value))}
+                              />
+                              <span>{advancedOptions.confThreshold}%</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Show message when no card types are selected */}
+                  {!cardTypes.cloze && !cardTypes.imageOcclusion && (
+                    <div className="no-settings-message">
+                      <p>Select card types above to see their quality settings</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <button 
               type="submit" 
               className="generate-btn"
@@ -213,6 +430,21 @@ export default function App() {
               <p>AI-generated Q&A pairs from your lecture content</p>
             </div>
             <div className="feature-item">
+              <span className="feature-icon">🎯</span>
+              <h4>Multiple Card Types</h4>
+              <p>Basic, Cloze, and Image Occlusion cards</p>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">📊</span>
+              <h4>Adaptive Levels</h4>
+              <p>Level 1 (basic) and Level 2 (advanced) cards</p>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">🖼️</span>
+              <h4>Image Processing</h4>
+              <p>Advanced image occlusion for anatomical diagrams</p>
+            </div>
+            <div className="feature-item">
               <span className="feature-icon">📱</span>
               <h4>Anki Ready</h4>
               <p>Direct import to Anki with proper formatting</p>
@@ -221,11 +453,6 @@ export default function App() {
               <span className="feature-icon">⚡</span>
               <h4>Fast Processing</h4>
               <p>Generate decks in minutes, not hours</p>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">🔒</span>
-              <h4>Secure</h4>
-              <p>Your files are processed securely and not stored</p>
             </div>
           </div>
         </div>
