@@ -780,12 +780,35 @@ body {
   border-radius: 16px;
 }
 
-.audio-section h3 {
+.audio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.audio-header h3 {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
-  text-align: center;
+  margin: 0;
+}
+
+.audio-toggle-btn {
+  background: var(--border-color);
+  color: var(--text-secondary);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.audio-toggle-btn:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
 }
 
 .audio-upload {

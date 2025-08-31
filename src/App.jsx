@@ -40,7 +40,8 @@ export default function App() {
     makeAudioClips: false,
     clipLength: 9,
     maxClips: 2,
-    alignmentMode: "semantic+keyword"
+    alignmentMode: "semantic+keyword",
+    showAudio: false // Added for audio section toggle
   });
 
   const handleDrag = (e) => {
@@ -238,48 +239,59 @@ export default function App() {
 
             {/* Audio Integration Section */}
             <div className="audio-section">
-              <h3>🎵 Audio Integration (Optional)</h3>
+              <div className="audio-header">
+                <h3>🎵 Audio Integration (Optional)</h3>
+                <button
+                  type="button"
+                  className="audio-toggle-btn"
+                  onClick={() => setAudioOptions(prev => ({ ...prev, showAudio: !prev.showAudio }))}
+                >
+                  {audioOptions.showAudio ? "🔽 Hide Audio Options" : "🔽 Show Audio Options"}
+                </button>
+              </div>
               <p className="section-description">
                 Upload lecture audio to enhance flashcards with emphasis detection and audio clips
               </p>
               
-              <div className="audio-upload">
-                <label className="audio-upload-label">
-                  <input
-                    type="file"
-                    accept=".mp3,.wav,.m4a,.flac"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      setAudioFile(file);
-                      setAudioOptions(prev => ({ ...prev, enableAudio: !!file }));
-                    }}
-                    className="audio-file-input"
-                  />
-                  <div className="audio-upload-content">
-                    <span className="audio-icon">🎤</span>
-                    <div className="audio-text">
-                      <strong>Upload Lecture Audio</strong>
-                      <small>MP3, WAV, M4A, or FLAC • Max 100MB</small>
-                    </div>
-                  </div>
-                </label>
-                
-                {audioFile && (
-                  <div className="audio-file-info">
-                    <span className="audio-file-name">📁 {audioFile.name}</span>
-                    <button
-                      type="button"
-                      className="remove-audio-btn"
-                      onClick={() => {
-                        setAudioFile(null);
-                        setAudioOptions(prev => ({ ...prev, enableAudio: false }));
+              {audioOptions.showAudio && (
+                <div className="audio-upload">
+                  <label className="audio-upload-label">
+                    <input
+                      type="file"
+                      accept=".mp3,.wav,.m4a,.flac"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        setAudioFile(file);
+                        setAudioOptions(prev => ({ ...prev, enableAudio: !!file }));
                       }}
-                    >
-                      ✕ Remove
-                    </button>
-                  </div>
-                )}
-              </div>
+                      className="audio-file-input"
+                    />
+                    <div className="audio-upload-content">
+                      <span className="audio-icon">🎤</span>
+                      <div className="audio-text">
+                        <strong>Upload Lecture Audio</strong>
+                        <small>MP3, WAV, M4A, or FLAC • Max 100MB</small>
+                      </div>
+                    </div>
+                  </label>
+                  
+                  {audioFile && (
+                    <div className="audio-file-info">
+                      <span className="audio-file-name">📁 {audioFile.name}</span>
+                      <button
+                        type="button"
+                        className="remove-audio-btn"
+                        onClick={() => {
+                          setAudioFile(null);
+                          setAudioOptions(prev => ({ ...prev, enableAudio: false }));
+                        }}
+                      >
+                        ✕ Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Advanced Configuration Toggle */}
