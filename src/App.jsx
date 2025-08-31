@@ -108,66 +108,54 @@ export default function App() {
     }));
   };
 
-  async function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
-    setHint("");
-    setStatus("");
-    setProgress(0);
-    
     const f = fileRef.current?.files?.[0];
-    if (!f) { 
-      setMsg("⚠️ Please select a .ppt, .pptx, or .pdf file first.");
-      return; 
-    }
-
-    // Validate that at least one card type is selected
-    if (!Object.values(cardTypes).some(v => v)) {
-      setMsg("⚠️ Please select at least one card type.");
-      return;
-    }
-
-    // Validate that at least one level is selected
-    if (!Object.values(cardLevels).some(v => v)) {
-      setMsg("⚠️ Please select at least one card level.");
-      return;
-    }
+    if (!f) return;
 
     setBusy(true);
-    setStatus("🔄 Processing your medical slides...");
+    setMsg("");
+    setHint("");
     
-    // Simulate progress for better UX
     const progressInterval = simulateProgress();
     
     try {
-      setStatus("📊 Extracting text and images from slides...");
+      setStatus("📖 Analyzing your lecture content...");
       await new Promise(resolve => setTimeout(resolve, 800));
       setProgress(30);
       
-      setStatus("🧠 Generating medical flashcards with AI...");
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      setStatus("🧠 AI medical expert analyzing concepts...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setProgress(50);
+      
+      setStatus("🔍 Identifying knowledge gaps...");
+      await new Promise(resolve => setTimeout(resolve, 600));
       setProgress(60);
       
-      setStatus("📝 Creating Anki deck...");
+      setStatus("🗺️ Creating concept mind maps...");
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setProgress(70);
+      
+      setStatus("📝 Creating comprehensive medical notes...");
       await new Promise(resolve => setTimeout(resolve, 600));
       setProgress(80);
       
-      setStatus("📦 Packaging your deck...");
+      setStatus("📦 Packaging your comprehensive deck...");
       const zip = await convertFile(f);
       setProgress(100);
       
       const url = URL.createObjectURL(zip);
       const a = document.createElement("a");
       a.href = url; 
-      a.download = "ojamed_deck.zip";
+      a.download = "ojamed_comprehensive_deck.zip";
       document.body.appendChild(a); 
       a.click(); 
       a.remove();
       URL.revokeObjectURL(url);
       
-      setStatus("✅ Deck generated successfully!");
-      setMsg("🎉 Your Anki deck is ready! The ZIP contains both deck.csv and deck.apkg files.");
-      setHint("💡 If the .apkg import has issues, use the deck.csv file inside the ZIP.");
+      setStatus("✅ Comprehensive medical package generated successfully!");
+      setMsg("🎉 Your comprehensive medical package is ready! The ZIP contains: Anki deck, CSV data, AND comprehensive medical notes with mind maps!");
+      setHint("💡 The comprehensive notes PDF includes concept maps, clinical pearls, and expert explanations to help you understand the BIG PICTURE!");
       
     } catch (err) {
       clearInterval(progressInterval);
@@ -201,15 +189,16 @@ export default function App() {
           <span className="logo-icon">🏥</span>
           <h1>OjaMed</h1>
         </div>
-        <p className="tagline">Transform Medical Lectures into Anki Flashcards</p>
+        <p className="tagline">AI Medical Expert Educator - Beyond Flashcards</p>
       </div>
 
       <div className="main-card">
         <div className="upload-section">
-          <h2>Upload Your Medical Slides</h2>
+          <h2>Upload Your Medical Lecture</h2>
           <p className="description">
-            Upload PowerPoint (.ppt/.pptx) or PDF files to generate comprehensive 
-            medical flashcards optimized for Anki study sessions.
+            Transform your PowerPoint or PDF lectures into comprehensive medical understanding. 
+            Our AI acts as your personal medical professor, providing both flashcards AND 
+            comprehensive notes with visual mind maps and expert knowledge gap filling.
           </p>
 
           <form onSubmit={onSubmit} className="upload-form">
@@ -223,7 +212,7 @@ export default function App() {
               <div className="drop-content">
                 <span className="drop-icon">📁</span>
                 <p className="drop-text">
-                  {dragActive ? "Drop your file here!" : "Drag & drop your slides here"}
+                  {dragActive ? "Drop your lecture here!" : "Drag & drop your medical lecture here"}
                 </p>
                 <p className="drop-subtext">or click to browse</p>
                 <input 
@@ -311,9 +300,9 @@ export default function App() {
             {/* Advanced Configuration Panel */}
             {showAdvanced && (
               <div className="advanced-panel">
+                {/* Card Types Section */}
                 <div className="config-section">
-                  <h3>🎯 Card Types</h3>
-                  <p className="section-description">Select which types of flashcards you want to generate</p>
+                  <h4>🎯 Card Types</h4>
                   <div className="option-grid">
                     <label className="option-item">
                       <input
@@ -321,10 +310,12 @@ export default function App() {
                         checked={cardTypes.basic}
                         onChange={() => handleCardTypeChange('basic')}
                       />
-                      <span className="option-icon">📝</span>
                       <div className="option-content">
-                        <strong>Basic Cards</strong>
-                        <small>Traditional Q&A format</small>
+                        <span className="option-icon">📝</span>
+                        <div>
+                          <strong>Basic Cards</strong>
+                          <small>Traditional Q&A format</small>
+                        </div>
                       </div>
                     </label>
                     
@@ -334,10 +325,12 @@ export default function App() {
                         checked={cardTypes.cloze}
                         onChange={() => handleCardTypeChange('cloze')}
                       />
-                      <span className="option-icon">🔍</span>
                       <div className="option-content">
-                        <strong>Cloze Cards</strong>
-                        <small>Fill-in-the-blank format</small>
+                        <span className="option-icon">🔍</span>
+                        <div>
+                          <strong>Cloze Cards</strong>
+                          <small>Fill-in-the-blank format</small>
+                        </div>
                       </div>
                     </label>
                     
@@ -347,18 +340,20 @@ export default function App() {
                         checked={cardTypes.imageOcclusion}
                         onChange={() => handleCardTypeChange('imageOcclusion')}
                       />
-                      <span className="option-icon">🖼️</span>
                       <div className="option-content">
-                        <strong>Image Occlusion</strong>
-                        <small>Masked anatomical diagrams</small>
+                        <span className="option-icon">🖼️</span>
+                        <div>
+                          <strong>Image Occlusion</strong>
+                          <small>Masked anatomical diagrams</small>
+                        </div>
                       </div>
                     </label>
                   </div>
                 </div>
 
+                {/* Card Levels Section */}
                 <div className="config-section">
-                  <h3>📚 Card Levels</h3>
-                  <p className="section-description">Choose the complexity level of your flashcards</p>
+                  <h4>📊 Card Levels</h4>
                   <div className="option-grid">
                     <label className="option-item">
                       <input
@@ -366,10 +361,12 @@ export default function App() {
                         checked={cardLevels.level1}
                         onChange={() => handleLevelChange('level1')}
                       />
-                      <span className="option-icon">🥉</span>
                       <div className="option-content">
-                        <strong>Level 1 (Basic)</strong>
-                        <small>Definitions, facts, basic concepts</small>
+                        <span className="option-icon">🎯</span>
+                        <div>
+                          <strong>Level 1</strong>
+                          <small>Basic recall & definitions</small>
+                        </div>
                       </div>
                     </label>
                     
@@ -379,179 +376,181 @@ export default function App() {
                         checked={cardLevels.level2}
                         onChange={() => handleLevelChange('level2')}
                       />
-                      <span className="option-icon">🥈</span>
                       <div className="option-content">
-                        <strong>Level 2 (Advanced)</strong>
-                        <small>Clinical reasoning, interpretation</small>
+                        <span className="option-icon">🧠</span>
+                        <div>
+                          <strong>Level 2</strong>
+                          <small>Clinical reasoning & application</small>
+                        </div>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <div className="config-section">
-                  <h3>⚙️ Quality Settings</h3>
-                  <p className="section-description">Automatically configured based on your card type selection</p>
+                {/* Quality Settings Section */}
+                <div className="quality-section">
+                  <h4>⚙️ Quality Settings</h4>
                   
-                  {/* Cloze Quality Settings - Only show when Cloze is selected */}
+                  {/* Cloze Quality Settings */}
                   {cardTypes.cloze && (
-                    <div className="quality-section">
-                      <h4>🔍 Cloze Quality Settings</h4>
-                      <div className="quality-options">
-                        <label className="option-item">
-                          <input
-                            type="checkbox"
-                            checked={true}
-                            disabled={true}
-                          />
-                          <span className="option-icon">✨</span>
-                          <div className="option-content">
+                    <div className="quality-options">
+                      <label className="option-item">
+                        <input
+                          type="checkbox"
+                          checked={advancedOptions.useCloze}
+                          onChange={(e) => handleAdvancedOptionChange('useCloze', e.target.checked)}
+                        />
+                        <div className="option-content">
+                          <span className="option-icon">🔍</span>
+                          <div>
                             <strong>Auto-detect Cloze</strong>
                             <small>Automatically identify cloze opportunities</small>
                           </div>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Image Occlusion Quality Settings */}
+                  {cardTypes.imageOcclusion && (
+                    <div className="quality-options">
+                      <div className="option-row">
+                        <label>
+                          Max Masks per Image:
+                          <input
+                            type="range"
+                            min="2"
+                            max="10"
+                            value={advancedOptions.maxMasksPerImage}
+                            onChange={(e) => handleAdvancedOptionChange('maxMasksPerImage', parseInt(e.target.value))}
+                          />
+                          <span>{advancedOptions.maxMasksPerImage}</span>
+                        </label>
+                      </div>
+                      
+                      <div className="option-row">
+                        <label>
+                          Confidence Threshold:
+                          <input
+                            type="range"
+                            min="10"
+                            max="90"
+                            value={advancedOptions.confThreshold}
+                            onChange={(e) => handleAdvancedOptionChange('confThreshold', parseInt(e.target.value))}
+                          />
+                          <span>{advancedOptions.confThreshold}%</span>
                         </label>
                       </div>
                     </div>
                   )}
-                  
-                  {/* Image Occlusion Quality Settings - Only show when Image Occlusion is selected */}
-                  {cardTypes.imageOcclusion && (
-                    <div className="quality-section">
-                      <h4>🖼️ Image Occlusion Quality Settings</h4>
-                      <div className="quality-options">
+
+                  {/* Show message when no relevant card types selected */}
+                  {!cardTypes.cloze && !cardTypes.imageOcclusion && (
+                    <div className="no-settings-message">
+                      Select a card type above to see quality settings
+                    </div>
+                  )}
+                </div>
+
+                {/* Audio Quality Settings */}
+                {audioOptions.enableAudio && (
+                  <div className="config-section">
+                    <h4>🎵 Audio Quality Settings</h4>
+                    <div className="option-grid">
+                      <label className="option-item">
+                        <input
+                          type="checkbox"
+                          checked={audioOptions.useEmphasis}
+                          onChange={(e) => setAudioOptions(prev => ({ ...prev, useEmphasis: e.target.checked }))}
+                        />
+                        <div className="option-content">
+                          <span className="option-icon">🔊</span>
+                          <div>
+                            <strong>Emphasis Detection</strong>
+                            <small>Detect stressed words and concepts</small>
+                          </div>
+                        </div>
+                      </label>
+                      
+                      <label className="option-item">
+                        <input
+                          type="checkbox"
+                          checked={audioOptions.enableDiarization}
+                          onChange={(e) => setAudioOptions(prev => ({ ...prev, enableDiarization: e.target.checked }))}
+                        />
+                        <div className="option-content">
+                          <span className="option-icon">👤</span>
+                          <div>
+                            <strong>Speaker Diarization</strong>
+                            <small>Identify different speakers</small>
+                          </div>
+                        </div>
+                      </label>
+                      
+                      <label className="option-item">
+                        <input
+                          type="checkbox"
+                          checked={audioOptions.makeAudioClips}
+                          onChange={(e) => setAudioOptions(prev => ({ ...prev, makeAudioClips: e.target.checked }))}
+                        />
+                        <div className="option-content">
+                          <span className="option-icon">✂️</span>
+                          <div>
+                            <strong>Generate Audio Clips</strong>
+                            <small>Create audio snippets for flashcards</small>
+                          </div>
+                        </div>
+                      </label>
+                      
+                      {audioOptions.makeAudioClips && (
                         <div className="nested-options">
                           <div className="option-row">
                             <label>
-                              Max Masks per Image:
+                              Clip Length (seconds):
                               <input
                                 type="range"
-                                min="1"
-                                max="10"
-                                value={advancedOptions.maxMasksPerImage}
-                                onChange={(e) => handleAdvancedOptionChange('maxMasksPerImage', parseInt(e.target.value))}
+                                min="5"
+                                max="15"
+                                value={audioOptions.clipLength}
+                                onChange={(e) => setAudioOptions(prev => ({ ...prev, clipLength: parseInt(e.target.value) }))}
                               />
-                              <span>{advancedOptions.maxMasksPerImage}</span>
+                              <span>{audioOptions.clipLength}s</span>
                             </label>
                           </div>
                           
                           <div className="option-row">
                             <label>
-                              Confidence Threshold:
+                              Max Clips per Slide:
                               <input
                                 type="range"
-                                min="10"
-                                max="90"
-                                value={advancedOptions.confThreshold}
-                                onChange={(e) => handleAdvancedOptionChange('confThreshold', parseInt(e.target.value))}
+                                min="1"
+                                max="5"
+                                value={audioOptions.maxClips}
+                                onChange={(e) => setAudioOptions(prev => ({ ...prev, maxClips: parseInt(e.target.value) }))}
                               />
-                              <span>{advancedOptions.confThreshold}%</span>
+                              <span>{audioOptions.maxClips}</span>
+                            </label>
+                          </div>
+                          
+                          <div className="option-row">
+                            <label>
+                              Alignment Mode:
+                              <select
+                                value={audioOptions.alignmentMode}
+                                onChange={(e) => setAudioOptions(prev => ({ ...prev, alignmentMode: e.target.value }))}
+                                className="alignment-select"
+                              >
+                                <option value="semantic+keyword">Semantic + Keyword (Best)</option>
+                                <option value="semantic">Semantic Only</option>
+                                <option value="keyword">Keyword Only</option>
+                              </select>
                             </label>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Show message when no card types are selected */}
-                  {!cardTypes.cloze && !cardTypes.imageOcclusion && (
-                    <div className="no-settings-message">
-                      <p>Select card types above to see their quality settings</p>
-                    </div>
-                  )}
-                  
-                  {/* Audio Quality Settings - Only show when audio is uploaded */}
-                  {audioOptions.enableAudio && (
-                    <div className="quality-section">
-                      <h4>🎵 Audio Quality Settings</h4>
-                      <div className="quality-options">
-                        <label className="option-item">
-                          <input
-                            type="checkbox"
-                            checked={audioOptions.useEmphasis}
-                            onChange={(e) => setAudioOptions(prev => ({ ...prev, useEmphasis: e.target.checked }))}
-                          />
-                          <span className="option-icon">🎯</span>
-                          <div className="option-content">
-                            <strong>Emphasis Detection</strong>
-                            <small>Detect stressed content from pitch, volume, and speaking rate</small>
-                          </div>
-                        </label>
-                        
-                        <label className="option-item">
-                          <input
-                            type="checkbox"
-                            checked={audioOptions.enableDiarization}
-                            onChange={(e) => setAudioOptions(prev => ({ ...prev, enableDiarization: e.target.checked }))}
-                          />
-                          <span className="option-icon">👥</span>
-                          <div className="option-content">
-                            <strong>Speaker Diarization</strong>
-                            <small>Identify different speakers in the lecture</small>
-                          </div>
-                        </label>
-                        
-                        <label className="option-item">
-                          <input
-                            type="checkbox"
-                            checked={audioOptions.makeAudioClips}
-                            onChange={(e) => setAudioOptions(prev => ({ ...prev, makeAudioClips: e.target.checked }))}
-                          />
-                          <span className="option-icon">🎬</span>
-                          <div className="option-content">
-                            <strong>Generate Audio Clips</strong>
-                            <small>Create audio snippets for flashcards</small>
-                          </div>
-                        </label>
-                        
-                        {audioOptions.makeAudioClips && (
-                          <div className="nested-options">
-                            <div className="option-row">
-                              <label>
-                                Clip Length (seconds):
-                                <input
-                                  type="range"
-                                  min="5"
-                                  max="15"
-                                  value={audioOptions.clipLength}
-                                  onChange={(e) => setAudioOptions(prev => ({ ...prev, clipLength: parseInt(e.target.value) }))}
-                                />
-                                <span>{audioOptions.clipLength}s</span>
-                              </label>
-                            </div>
-                            
-                            <div className="option-row">
-                              <label>
-                                Max Clips per Slide:
-                                <input
-                                  type="range"
-                                  min="1"
-                                  max="5"
-                                  value={audioOptions.maxClips}
-                                  onChange={(e) => setAudioOptions(prev => ({ ...prev, maxClips: parseInt(e.target.value) }))}
-                                />
-                                <span>{audioOptions.maxClips}</span>
-                              </label>
-                            </div>
-                            
-                            <div className="option-row">
-                              <label>
-                                Alignment Mode:
-                                <select
-                                  value={audioOptions.alignmentMode}
-                                  onChange={(e) => setAudioOptions(prev => ({ ...prev, alignmentMode: e.target.value }))}
-                                  className="alignment-select"
-                                >
-                                  <option value="semantic+keyword">Semantic + Keyword (Best)</option>
-                                  <option value="semantic">Semantic Only</option>
-                                  <option value="keyword">Keyword Only</option>
-                                </select>
-                              </label>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -566,7 +565,7 @@ export default function App() {
                   Generating...
                 </>
               ) : (
-                "🚀 Generate Medical Flashcards"
+                "🧠 Generate Comprehensive Medical Package"
               )}
             </button>
           </form>
@@ -589,37 +588,47 @@ export default function App() {
         </div>
 
         <div className="features-section">
-          <h3>✨ What You Get</h3>
+          <h3>✨ What You Get - Beyond Traditional Flashcards</h3>
           <div className="features-grid">
             <div className="feature-item">
+              <span className="feature-icon">🧠</span>
+              <h4>AI Medical Expert</h4>
+              <p>AI acts as your personal medical professor, comprehensively understanding your entire lecture</p>
+            </div>
+            <div className="feature-item">
               <span className="feature-icon">📚</span>
-              <h4>Medical Flashcards</h4>
-              <p>AI-generated Q&A pairs from your lecture content</p>
+              <h4>Comprehensive Medical Notes</h4>
+              <p>Professional PDF with learning objectives, clinical pearls, and expert explanations</p>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">🗺️</span>
+              <h4>Visual Mind Maps</h4>
+              <p>Concept relationships and connections shown through beautiful visual diagrams</p>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">🔍</span>
+              <h4>Knowledge Gap Filling</h4>
+              <p>AI identifies and fills missing foundational knowledge for complete understanding</p>
             </div>
             <div className="feature-item">
               <span className="feature-icon">🎯</span>
-              <h4>Multiple Card Types</h4>
-              <p>Basic, Cloze, and Image Occlusion cards</p>
+              <h4>Enhanced Flashcards</h4>
+              <p>Level 1 (basic) and Level 2 (clinical reasoning) cards with relationships</p>
             </div>
             <div className="feature-item">
-              <span className="feature-icon">📊</span>
-              <h4>Adaptive Levels</h4>
-              <p>Level 1 (basic) and Level 2 (advanced) cards</p>
+              <span className="feature-icon">💎</span>
+              <h4>Clinical Pearls</h4>
+              <p>Key insights and practical knowledge extracted from your lecture content</p>
             </div>
             <div className="feature-item">
               <span className="feature-icon">🖼️</span>
-              <h4>Image Processing</h4>
-              <p>Advanced image occlusion for anatomical diagrams</p>
+              <h4>Advanced Processing</h4>
+              <p>Image occlusion, cloze deletion, and audio integration capabilities</p>
             </div>
             <div className="feature-item">
               <span className="feature-icon">📱</span>
               <h4>Anki Ready</h4>
-              <p>Direct import to Anki with proper formatting</p>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">⚡</span>
-              <h4>Fast Processing</h4>
-              <p>Generate decks in minutes, not hours</p>
+              <p>Direct import to Anki with proper formatting and organization</p>
             </div>
           </div>
         </div>
@@ -634,7 +643,7 @@ export default function App() {
       </div>
 
       <footer className="footer">
-        <p>🏥 OjaMed - Medical Education Made Simple</p>
+        <p>🏥 OjaMed - AI Medical Expert Educator</p>
         <p className="disclaimer">
           Not affiliated with Anki. Not medical advice. For educational purposes only.
         </p>
