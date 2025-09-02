@@ -94,7 +94,7 @@ function App() {
       const formData = new FormData();
       formData.append('presentation', selectedFile);
       
-      const extractResponse = await fetch('http://localhost:8000/extract_slides', {
+      const extractResponse = await fetch(`${window.location.origin}/extract_slides`, {
         method: 'POST',
         body: formData,
       });
@@ -134,7 +134,7 @@ function App() {
               analysisFormData.append('detection_threshold', confidenceThreshold);
               analysisFormData.append('nms_iou_threshold', 0.5);
 
-              const analysisResponse = await fetch('http://localhost:8000/detect_segment_rank', {
+              const analysisResponse = await fetch(`${window.location.origin}/detect_segment_rank`, {
                 method: 'POST',
                 body: analysisFormData,
               });
@@ -197,7 +197,7 @@ function App() {
       setStatus('📦 Processing PowerPoint and generating flashcards...');
 
       // Call the new complete package endpoint
-      const response = await fetch('http://localhost:8000/generate_complete_package', {
+      const response = await fetch(`${window.location.origin}/generate_complete_package`, {
         method: 'POST',
         body: formData,
       });
@@ -221,7 +221,7 @@ function App() {
         
         // Automatically trigger zip download
         if (result.files.zip) {
-          window.open(`http://localhost:8000${result.files.zip}`, '_blank');
+          window.open(`${window.location.origin}${result.files.zip}`, '_blank');
         }
       } else {
         setStatus(`❌ Package generation failed: ${result.message}`);
@@ -484,21 +484,21 @@ function App() {
               
               <div className="download-buttons">
                 <a 
-                  href={`http://localhost:8000${downloadLinks.zip}`}
+                  href={`${window.location.origin}${downloadLinks.zip}`}
                   className="download-btn primary"
                   download
                 >
                   📦 Download Complete Package (ZIP)
                 </a>
                 <a 
-                  href={`http://localhost:8000${downloadLinks.apkg}`}
+                  href={`${window.location.origin}${downloadLinks.apkg}`}
                   className="download-btn"
                   download
                 >
                   🃏 Download Anki Deck (.apkg)
                 </a>
                 <a 
-                  href={`http://localhost:8000${downloadLinks.csv}`}
+                  href={`${window.location.origin}${downloadLinks.csv}`}
                   className="download-btn"
                   download
                 >
