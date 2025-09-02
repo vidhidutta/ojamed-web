@@ -29,3 +29,7 @@ After deploy, if CORS errors occur:
 
 Add the Pages URL to ALLOWED_ORIGINS on your API and redeploy.
 
+
+
+
+
