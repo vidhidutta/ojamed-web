@@ -196,36 +196,32 @@ function App() {
       setProcessingProgress(30);
       setStatus('📦 Processing PowerPoint and generating flashcards...');
 
-      // Call the new complete package endpoint
-      const response = await fetch(`${window.location.origin}/generate_complete_package`, {
+      // Call the convert endpoint
+      const response = await fetch(`${window.location.origin}/convert`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate complete package');
+        throw new Error('Failed to generate flashcards');
       }
 
-      const result = await response.json();
       setProcessingProgress(100);
       
-      if (result.success) {
-        setStatus(`✅ Package generated successfully! ${result.message}`);
-        
-        // Store the generated package info
-        setGeneratedPackage(result);
-        setDownloadLinks(result.files);
-        
-        // Show download options to user
-        setStatus(`🎯 Generated ${result.stats.total_flashcards} flashcards with ${result.stats.image_occlusion_regions} image occlusion regions. Download your files below:`);
-        
-        // Automatically trigger zip download
-        if (result.files.zip) {
-          window.open(`${window.location.origin}${result.files.zip}`, '_blank');
-        }
-      } else {
-        setStatus(`❌ Package generation failed: ${result.message}`);
-      }
+      // The backend returns a ZIP file directly
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create download link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ojamed_deck.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      setStatus(`✅ Package generated successfully! Your flashcards have been downloaded.`);
       
     } catch (error) {
       console.error('Package generation error:', error);
