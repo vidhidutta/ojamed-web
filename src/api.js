@@ -1,6 +1,6 @@
 // API configuration and functions for ojamed-web
 
-export const API_URL = 'http://localhost:8000';
+export const API_URL = window.location.origin;
 
 // Legacy file conversion endpoint
 export const convertFile = async (file) => {
