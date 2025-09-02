@@ -4,38 +4,8 @@ import './styles.css';
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [status, setStatus] = useState('');
-  const [regions, setRegions] = useState([]);
-  const [showAudioOptions, setShowAudioOptions] = useState(false);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const [aiUnderstandingEnabled, setAiUnderstandingEnabled] = useState(true);
-  
-  // PowerPoint processing state
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
-  const [extractedSlides, setExtractedSlides] = useState([]);
-  const [slideResults, setSlideResults] = useState({});
-  
-  // Package generation state
-  const [generatedPackage, setGeneratedPackage] = useState(null);
-  const [downloadLinks, setDownloadLinks] = useState(null);
-  
-  // Audio options state
-  const [audioFile, setAudioFile] = useState(null);
-  const [emphasisDetection, setEmphasisDetection] = useState(true);
-  const [speakerDiarization, setSpeakerDiarization] = useState(false);
-  const [clipLength, setClipLength] = useState(10);
-  const [maxClips, setMaxClips] = useState(5);
-  
-  // Advanced options state
-  const [confidenceThreshold, setConfidenceThreshold] = useState(0.4);
-  const [semanticTolerance, setSemanticTolerance] = useState(0.3);
-  const [maxMasksPerImage, setMaxMasksPerImage] = useState(6);
-  const [maskStyle, setMaskStyle] = useState('fill');
-
-  // Card type selection
-  const [selectedCardTypes, setSelectedCardTypes] = useState(['basic']);
-  const [selectedCardLevels, setSelectedCardLevels] = useState(['level1']);
 
   const fileInputRef = useRef(null);
 
@@ -47,36 +17,11 @@ function App() {
           file.name.endsWith('.pptx') || file.name.endsWith('.ppt')) {
         setSelectedFile(file);
         setStatus(`Selected PowerPoint: ${file.name}`);
-        setExtractedSlides([]);
-        setSlideResults({});
       } else {
         setStatus('Please select a PowerPoint presentation (.pptx or .ppt)');
         setSelectedFile(null);
       }
     }
-  };
-
-  const handleAudioFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setAudioFile(file);
-    }
-  };
-
-  const toggleCardType = (cardType) => {
-    setSelectedCardTypes(prev => 
-      prev.includes(cardType) 
-        ? prev.filter(type => type !== cardType)
-        : [...prev, cardType]
-    );
-  };
-
-  const toggleCardLevel = (cardLevel) => {
-    setSelectedCardLevels(prev => 
-      prev.includes(cardLevel) 
-        ? prev.filter(level => level !== cardLevel)
-        : [...prev, cardLevel]
-    );
   };
 
   const processPowerPoint = async () => {
@@ -86,115 +31,16 @@ function App() {
     }
 
     setIsProcessing(true);
-    setStatus('📖 Extracting slides from PowerPoint...');
+    setStatus('📦 Processing PowerPoint and generating flashcards...');
     setProcessingProgress(10);
 
     try {
-      // Step 1: Extract slides from PowerPoint
+      // Prepare form data for the convert endpoint
       const formData = new FormData();
-      formData.append('presentation', selectedFile);
-      
-      const extractResponse = await fetch(`${window.location.origin}/extract_slides`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!extractResponse.ok) {
-        throw new Error('Failed to extract slides from PowerPoint');
-      }
-
-      const extractResult = await extractResponse.json();
-      const slides = extractResult.slides || [];
-      setExtractedSlides(slides);
-      setProcessingProgress(30);
-      setStatus(`✅ Extracted ${slides.length} slides. Analyzing images...`);
-
-      // Step 2: Process each slide for image occlusion
-      const results = {};
-      let totalRegions = 0;
-
-      for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i];
-        setProcessingProgress(30 + (i / slides.length) * 60);
-        setStatus(`🔍 Analyzing slide ${i + 1}/${slides.length}: ${slide.title || 'Untitled'}`);
-
-        if (slide.images && slide.images.length > 0) {
-          // Process each image in the slide
-          for (let j = 0; j < slide.images.length; j++) {
-            const imageData = slide.images[j];
-            
-            try {
-              // Create FormData for the image analysis request
-              const analysisFormData = new FormData();
-              analysisFormData.append('image_data', imageData.image_data);
-              analysisFormData.append('slide_text', slide.text || '');
-              analysisFormData.append('transcript_text', 'Lecture transcript for context');
-              analysisFormData.append('max_masks_per_image', maxMasksPerImage);
-              analysisFormData.append('min_mask_area_px', 900);
-              analysisFormData.append('detection_threshold', confidenceThreshold);
-              analysisFormData.append('nms_iou_threshold', 0.5);
-
-              const analysisResponse = await fetch(`${window.location.origin}/detect_segment_rank`, {
-                method: 'POST',
-                body: analysisFormData,
-              });
-
-              if (analysisResponse.ok) {
-                const analysisResult = await analysisResponse.json();
-                const regions = analysisResult || [];
-                
-                if (!results[slide.id]) {
-                  results[slide.id] = { slide, images: {} };
-                }
-                
-                results[slide.id].images[imageData.id] = {
-                  image: imageData,
-                  regions: regions
-                };
-                
-                totalRegions += regions.length;
-              } else {
-                console.error(`Failed to analyze image ${j + 1} in slide ${i + 1}:`, analysisResponse.status);
-              }
-            } catch (error) {
-              console.error(`Error analyzing image ${j + 1} in slide ${i + 1}:`, error);
-            }
-          }
-        }
-      }
-
-      setSlideResults(results);
-      setProcessingProgress(100);
-      setStatus(`🎯 Analysis complete! Found ${totalRegions} potential occlusion regions across ${slides.length} slides`);
-      
-    } catch (error) {
-      console.error('PowerPoint processing error:', error);
-      setStatus(`❌ Error processing PowerPoint: ${error.message}`);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleGeneratePackage = async () => {
-    if (!selectedFile) {
-      setStatus('Please select a PowerPoint presentation first');
-      return;
-    }
-
-    setIsProcessing(true);
-    setStatus('Generating comprehensive medical package...');
-    setProcessingProgress(10);
-
-    try {
-      // Create FormData for the complete package generation
-      const formData = new FormData();
-      formData.append('presentation', selectedFile);
-      formData.append('card_types', JSON.stringify(selectedCardTypes));
-      formData.append('card_levels', JSON.stringify(selectedCardLevels));
-      formData.append('deck_name', 'Medical Lecture Deck');
+      formData.append('file', selectedFile);
 
       setProcessingProgress(30);
-      setStatus('📦 Processing PowerPoint and generating flashcards...');
+      setStatus('🔄 Uploading and processing your presentation...');
 
       // Call the convert endpoint
       const response = await fetch(`${window.location.origin}/convert`, {
@@ -206,7 +52,8 @@ function App() {
         throw new Error('Failed to generate flashcards');
       }
 
-      setProcessingProgress(100);
+      setProcessingProgress(90);
+      setStatus('📥 Downloading your flashcards...');
       
       // The backend returns a ZIP file directly
       const blob = await response.blob();
@@ -221,6 +68,7 @@ function App() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
+      setProcessingProgress(100);
       setStatus(`✅ Package generated successfully! Your flashcards have been downloaded.`);
       
     } catch (error) {
@@ -249,197 +97,43 @@ function App() {
         </div>
       </header>
 
+      {/* Main Container */}
       <div className="container">
-        {/* Main Content Area */}
-        <div className="main-content">
-          {/* Upload Section */}
-          <div className="upload-section">
-            <h2>Upload Your Medical Lecture</h2>
-            <p>Transform your PowerPoint or PDF lectures into comprehensive medical understanding. Our AI acts as your personal medical professor, providing both flashcards AND comprehensive notes with visual mind maps and expert knowledge gap filling.</p>
-            
-            <div className="file-upload-area">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept=".pptx,.ppt,.pdf"
-                style={{ display: 'none' }}
-              />
-              <div 
-                className="upload-zone"
-                onClick={() => fileInputRef.current.click()}
+        {/* Upload Section */}
+        <div className="upload-section">
+          <h2>Transform your PowerPoint into Medical Flashcards</h2>
+          <p>Upload your medical lecture slides and get comprehensive Anki flashcards with image occlusion, semantic analysis, and medical insights.</p>
+          
+          <div className="upload-zone" onClick={() => fileInputRef.current?.click()}>
+            <div className="upload-content">
+              <div className="upload-icon">📁</div>
+              <h3>Drag and Drop</h3>
+              <p>or click to select your PowerPoint file</p>
+              <p className="file-types">Supports .pptx and .ppt files</p>
+            </div>
+          </div>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pptx,.ppt"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+
+          {selectedFile && (
+            <div className="file-info">
+              <p>✅ Selected: {selectedFile.name}</p>
+              <button 
+                className="generate-btn"
+                onClick={processPowerPoint}
+                disabled={isProcessing}
               >
-                <div className="upload-icon">📁</div>
-                <p className="upload-text">Drag & drop your medical lecture here</p>
-                <p className="upload-subtext">or click to browse</p>
-              </div>
-              {selectedFile && (
-                <div className="file-info">
-                  <span>✅ {selectedFile.name}</span>
-                  <button 
-                    className="remove-btn"
-                    onClick={() => {
-                      setSelectedFile(null);
-                      setExtractedSlides([]);
-                      setSlideResults({});
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
+                {isProcessing ? '🔄 Generating...' : '🚀 Generate Flashcards'}
+              </button>
             </div>
+          )}
 
-            {/* Audio Integration Section - Inside Upload Card */}
-            <div className="audio-integration-inline">
-              <div className="audio-header">
-                <span className="audio-icon-inline">🎵</span>
-                <span className="audio-title">Audio Integration (Optional)</span>
-                <button 
-                  className="toggle-btn-inline"
-                  onClick={() => setShowAudioOptions(!showAudioOptions)}
-                >
-                  {showAudioOptions ? '▼ Hide Audio Options' : '▼ Show Audio Options'}
-                </button>
-              </div>
-              
-              {showAudioOptions && (
-                <div className="audio-options-inline">
-                  <p>Upload lecture audio to enhance flashcards with emphasis detection and audio clips</p>
-                  <div className="audio-upload-area">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleAudioFileSelect}
-                      style={{ display: 'none' }}
-                      id="audio-upload"
-                    />
-                    <label htmlFor="audio-upload" className="audio-upload-zone">
-                      <div className="audio-icon">🎤</div>
-                      <p>Upload Lecture Audio</p>
-                      <p className="audio-formats">MP3, WAV, M4A, or FLAC • Max 100MB</p>
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Advanced Options Section */}
-          <div className="advanced-section">
-            <button 
-              className="toggle-btn standalone"
-              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-            >
-              {showAdvancedOptions ? '▼ Hide Advanced Options' : '▼ Show Advanced Options'}
-            </button>
-            
-            {showAdvancedOptions && (
-              <div className="advanced-options">
-                {/* Card Types */}
-                <div className="option-group">
-                  <h3>🎯 Card Types</h3>
-                  <div className="card-options">
-                    <div 
-                      className={`card-option ${selectedCardTypes.includes('basic') ? 'selected' : ''}`}
-                      onClick={() => toggleCardType('basic')}
-                    >
-                      <div className="card-icon">📝</div>
-                      <div className="card-content">
-                        <h4>Basic Cards</h4>
-                        <p>Traditional Q&A format</p>
-                      </div>
-                      {selectedCardTypes.includes('basic') && <div className="checkmark">✓</div>}
-                    </div>
-                    
-                    <div 
-                      className={`card-option ${selectedCardTypes.includes('cloze') ? 'selected' : ''}`}
-                      onClick={() => toggleCardType('cloze')}
-                    >
-                      <div className="card-icon">🔍</div>
-                      <div className="card-content">
-                        <h4>Cloze Cards</h4>
-                        <p>Fill-in-the-blank format</p>
-                      </div>
-                      {selectedCardTypes.includes('cloze') && <div className="checkmark">✓</div>}
-                    </div>
-                    
-                    <div 
-                      className={`card-option ${selectedCardTypes.includes('image-occlusion') ? 'selected' : ''}`}
-                      onClick={() => toggleCardType('image-occlusion')}
-                    >
-                      <div className="card-icon">🖼️</div>
-                      <div className="card-content">
-                        <h4>Image Occlusion</h4>
-                        <p>Masked anatomical diagrams</p>
-                      </div>
-                      {selectedCardTypes.includes('image-occlusion') && <div className="checkmark">✓</div>}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Levels */}
-                <div className="option-group">
-                  <h3>📊 Card Levels</h3>
-                  <div className="card-levels">
-                    <div 
-                      className={`card-level-option ${selectedCardLevels.includes('level1') ? 'selected' : ''}`}
-                      onClick={() => toggleCardLevel('level1')}
-                    >
-                      <div className="card-level-icon">🎯</div>
-                      <div className="card-level-content">
-                        <h4>Level 1</h4>
-                        <p>Basic recall & definitions</p>
-                      </div>
-                      {selectedCardLevels.includes('level1') && <div className="checkmark">✓</div>}
-                    </div>
-                    
-                    <div 
-                      className={`card-level-option ${selectedCardLevels.includes('level2') ? 'selected' : ''}`}
-                      onClick={() => toggleCardLevel('level2')}
-                    >
-                      <div className="card-level-icon">🧠</div>
-                      <div className="card-level-content">
-                        <h4>Level 2</h4>
-                        <p>Clinical reasoning & application</p>
-                      </div>
-                      {selectedCardLevels.includes('level2') && <div className="checkmark">✓</div>}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quality Settings */}
-                <div className="option-group">
-                  <h3>⚙️ Quality Settings</h3>
-                  <div className="quality-settings">
-                    <p>Select a card type above to see quality settings</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Main Action Button */}
-          <div className="main-action">
-            <button 
-              className="generate-btn"
-              onClick={handleGeneratePackage}
-              disabled={!selectedFile || isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <span className="spinner"></span>
-                  Processing PowerPoint...
-                </>
-              ) : (
-                <>
-                  🧠 Generate Comprehensive Medical Package
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Processing Progress */}
           {isProcessing && (
             <div className="progress-section">
               <div className="progress-bar">
@@ -448,180 +142,56 @@ function App() {
                   style={{ width: `${processingProgress}%` }}
                 ></div>
               </div>
-              <p className="progress-text">{Math.round(processingProgress)}% Complete</p>
+              <p className="progress-text">{processingProgress}% Complete</p>
             </div>
           )}
 
-          {/* Status Display */}
           {status && (
-            <div className="status-display">
-              <p>{status}</p>
-            </div>
-          )}
-
-          {/* Download Section */}
-          {generatedPackage && downloadLinks && (
-            <div className="download-section">
-              <h3>📥 Download Your Medical Package</h3>
-              <div className="download-stats">
-                <div className="stat-item">
-                  <span className="stat-number">{generatedPackage.stats.total_flashcards}</span>
-                  <span className="stat-label">Total Flashcards</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">{generatedPackage.stats.image_occlusion_regions}</span>
-                  <span className="stat-label">Image Occlusion Regions</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">{generatedPackage.stats.slides_processed}</span>
-                  <span className="stat-label">Slides Processed</span>
-                </div>
-              </div>
-              
-              <div className="download-buttons">
-                <a 
-                  href={`${window.location.origin}${downloadLinks.zip}`}
-                  className="download-btn primary"
-                  download
-                >
-                  📦 Download Complete Package (ZIP)
-                </a>
-                <a 
-                  href={`${window.location.origin}${downloadLinks.apkg}`}
-                  className="download-btn"
-                  download
-                >
-                  🃏 Download Anki Deck (.apkg)
-                </a>
-                <a 
-                  href={`${window.location.origin}${downloadLinks.csv}`}
-                  className="download-btn"
-                  download
-                >
-                  📊 Download CSV Export (.csv)
-                </a>
-              </div>
-            </div>
-          )}
-
-          {/* PowerPoint Results */}
-          {Object.keys(slideResults).length > 0 && (
-            <div className="results-section">
-              <h3>🎯 PowerPoint Analysis Results</h3>
-              <div className="slides-overview">
-                {Object.values(slideResults).map((slideData, slideIndex) => (
-                  <div key={slideIndex} className="slide-card">
-                    <div className="slide-header">
-                      <h4>Slide {slideIndex + 1}: {slideData.slide.title || 'Untitled'}</h4>
-                      <span className="slide-text-length">
-                        {slideData.slide.text ? `${slideData.slide.text.length} characters` : 'No text'}
-                      </span>
-                    </div>
-                    
-                    {Object.keys(slideData.images).length > 0 ? (
-                      <div className="slide-images">
-                        {Object.values(slideData.images).map((imageData, imageIndex) => (
-                          <div key={imageIndex} className="image-result">
-                            <div className="image-info">
-                              <span className="image-label">Image {imageIndex + 1}</span>
-                              <span className="region-count">
-                                {imageData.regions.length} regions detected
-                              </span>
-                            </div>
-                            
-                            {imageData.regions.length > 0 && (
-                              <div className="regions-preview">
-                                {imageData.regions.slice(0, 3).map((region, regionIndex) => (
-                                  <span key={regionIndex} className="region-preview">
-                                    {region.term || `Region ${regionIndex + 1}`}
-                                  </span>
-                                ))}
-                                {imageData.regions.length > 3 && (
-                                  <span className="more-regions">
-                                    +{imageData.regions.length - 3} more
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="no-images">No images found in this slide</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+            <div className="status-section">
+              <p className="status-text">{status}</p>
             </div>
           )}
         </div>
 
         {/* Features Section */}
         <div className="features-section">
-          <h3>✨ What You Get - Beyond Traditional Flashcards</h3>
+          <h2>Why Choose OjaMed?</h2>
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">🧠</div>
-              <h4>AI Medical Expert</h4>
-              <p>AI acts as your personal medical professor, comprehensively understanding your entire lecture</p>
+              <h3>AI-Powered Analysis</h3>
+              <p>Advanced medical AI understands context and creates clinically relevant flashcards</p>
             </div>
-            
+            <div className="feature-card">
+              <div className="feature-icon">🖼️</div>
+              <h3>Image Occlusion</h3>
+              <p>Automatically detects and masks key anatomical structures and medical images</p>
+            </div>
             <div className="feature-card">
               <div className="feature-icon">📚</div>
-              <h4>Comprehensive Medical Notes</h4>
-              <p>Professional PDF with learning objectives, clinical pearls, and expert explanations</p>
+              <h3>Medical Focus</h3>
+              <p>Specialized for medical education with terminology and clinical relevance</p>
             </div>
-            
             <div className="feature-card">
-              <div className="feature-icon">🗺️</div>
-              <h4>Visual Mind Maps</h4>
-              <p>Concept relationships and connections shown through beautiful visual diagrams</p>
+              <div className="feature-icon">⚡</div>
+              <h3>Advanced Processing</h3>
+              <p>Semantic analysis, key phrase extraction, and intelligent content grouping</p>
             </div>
-            
             <div className="feature-card">
-              <div className="feature-icon">🔍</div>
-              <h4>Knowledge Gap Filling</h4>
-              <p>AI identifies and fills missing foundational knowledge for complete understanding</p>
-            </div>
-            
-            <div className="feature-card featured">
               <div className="feature-icon">🎯</div>
-              <h4>Enhanced Flashcards</h4>
-              <p>Level 1 (basic) and Level 2 (clinical reasoning) cards with relationships</p>
+              <h3>Anki Ready</h3>
+              <p>Direct .apkg export for immediate import into Anki with optimized formatting</p>
             </div>
-            
             <div className="feature-card">
-              <div className="feature-icon">💎</div>
-              <h4>Clinical Pearls</h4>
-              <p>Key insights and practical knowledge extracted from your lecture content</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">⚙️</div>
-              <h4>Advanced Processing</h4>
-              <p>Image occlusion, cloze deletion, and audio integration capabilities</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">📱</div>
-              <h4>Anki Ready</h4>
-              <p>Direct import to Anki with proper formatting and organization</p>
+              <div className="feature-icon">📊</div>
+              <h3>Multiple Formats</h3>
+              <p>Get flashcards in Anki, CSV, and comprehensive PDF formats</p>
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="footer">
-          <div className="footer-info">
-            <span>API Endpoint: https://ankigenerator.onrender.com</span>
-            <span>Max File Size: ~50 MB</span>
-            <span>Supported: .ppt, .pptx, .pdf</span>
-          </div>
-        </footer>
       </div>
     </div>
   );
 }
 
 export default App;
-
